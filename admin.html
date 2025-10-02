@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>怪異一覧ページ 管理者用</title>
+<style>
+body { font-family: system-ui, sans-serif; margin:0; padding:10px; background:#f0f0f0; }
+section { margin-bottom:20px; padding:12px; background:#fff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+label { display:block; margin-top:6px; font-weight:600; }
+input[type="text"], input[type="url"], input[type="password"] { width:100%; padding:4px; margin-top:2px; }
+textarea { width:100%; height:300px; margin-top:8px; }
+button { margin-top:12px; padding:6px 12px; cursor:pointer; }
+.card-edit { border-top:1px solid #ddd; padding-top:6px; margin-top:6px; }
+</style>
+</head>
+<body>
+
+<section id="login-section">
+  <h2>管理者ログイン</h2>
+  <input type="password" id="password" placeholder="パスワード">
+  <button id="loginBtn">ログイン</button>
+  <p id="login-msg" style="color:red;"></p>
+</section>
+
+<section id="admin-section" style="display:none;">
+  <h2>管理者用編集ページ</h2>
+
+  <div>
+    <label>タイトルロゴ URL</label>
+    <input type="url" id="titleLogo" value="images/bokyahinn_title.png">
+    <label>制作者ロゴ URL</label>
+    <input type="url" id="creatorLogo" value="images/bokyahinn_logo.png">
+    <label>背景画像 URL</label>
+    <input type="url" id="bgImage" value="images/background_default.png">
+  </div>
+
+  <div id="cards-edit">
+    <h3>カード編集（29枚）</h3>
+  </div>
+
+  <button onclick="generateHTML()">HTML生成</button>
+  <textarea id="generatedHTML" readonly placeholder="ここに生成されたHTMLが表示されます"></textarea>
+</section>
+
+<script>
+(function(){
+  const PASSWORD = "nua42ygo21";
+  const loginSection = document.getElementById('login-section');
+  const adminSection = document.getElementById('admin-section');
+  const loginMsg = document.getElementById('login-msg');
+  const loginBtn = document.getElementById('loginBtn');
+  const passwordInput = document.getElementById('password');
+
+  loginBtn.addEventListener('click', checkPassword);
+  passwordInput.addEventListener('keypress', function(e){
+    if(e.key==='Enter') checkPassword();
+  });
+
+  function checkPassword(){
+    const input = passwordInput.value.trim();
+    if(input===PASSWORD){
+      loginSection.style.display='none';
+      adminSection.style.display='block';
+      loginMsg.textContent='';
+    } else {
+      loginMsg.textContent='パスワードが違います';
+    }
+  }
+
+  // カード編集フォーム生成
+  const cardsEdit=document.getElementById('cards-edit');
+  for(let i=1;i<=29;i++){
+    const div=document.createElement('div');
+    div.className='card-edit';
+    const imgNumber=String(i).padStart(2,'0');
+    div.innerHTML=`<label>カード ${i} 名前</label><input type="text" id="cardName${i}" value="怪異${i}">
+<label>カード ${i} 画像URL</label><input type="url" id="cardImg${i}" value="images/bokyahinn_image_${imgNumber}.png">`;
+    cardsEdit.appendChild(div);
+  }
+
+  // HTML生成
+  window.generateHTML=function(){
+    const titleLogo=document.getElementById('titleLogo').value;
+    const creatorLogo=document.getElementById('creatorLogo').value;
+    const bgImage=document.getElementById('bgImage').value;
+
+    let cardsHTML='';
+    for(let i=1;i<=29;i++){
+      const name=document.getElementById('cardName'+i).value;
+      const img=document.getElementById('cardImg'+i).value;
+      cardsHTML+=`<div class="card" data-name="${name}"><img src="${img}" alt="${name}"><div class="card-name">${name}</div></div>\n`;
+    }
+
+    const finalHTML=`<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>怪異一覧ページ</title>
+<style>
+:root { --card-bg:#fff; --accent:#c62828; }
+*{box-sizing:border-box;}
+body { font-family: system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif; margin:0; background: url('${bgImage}') no-repeat center center fixed; background-size: cover; color:#111; }
+header { text-align:center; padding:20px 10px 10px; }
+header img { max-width:320px; height:auto; display:inline-block; }
+main { padding: 0 12px 40px; }
+h2 { text-align:center; margin:14px 0; font-size:1.25rem; }
+.cards { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin:0 auto; max-width:1100px; }
+.card { width:120px; cursor:pointer; border:2px solid transparent; padding:6px; background:var(--card-bg); border-radius:8px; transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease; box-shadow:0 1px 3px rgba(0,0,0,0.06); text-align:center; user-select:none; }
+.card:hover { transform:translateY(-4px); box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+.card.selected { border-color: var(--accent); box-shadow:0 10px 30px rgba(198,40,40,0.12); transform:translateY(-6px) scale(1.02); }
+.card img { width:100%; height:auto; display:block; border-radius:6px; }
+.card-name { margin-top:6px; font-size:0.95rem; line-height:1.1; }
+.candidate-wrap { display:flex; justify-content:center; margin-top:26px; padding:16px; }
+.candidate { padding:14px; border-top:2px solid #333; background:var(--card-bg); border-radius:8px; min-width:180px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+.candidate img { border-radius:6px; max-width:120px; height:auto; opacity:0; transform:translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; }
+.candidate img.fade-in { opacity:1; transform:translateY(0); }
+footer { text-align:center; padding:18px 10px; }
+footer img { max-width:160px; height:auto; display:inline-block; }
+@media (max-width:420px){ .card { width:94px; } .card img { border-radius:6px; } }
+</style>
+</head>
+<body>
+<header><img src="${titleLogo}" alt="タイトルロゴ"></header>
+<main>
+<h2>怪異一覧</h2>
+<div class="cards" id="cards">
+${cardsHTML}
+</div>
+<div class="candidate-wrap">
+<div class="candidate" id="candidate"><h3>怪異候補</h3><p>選択したカードがここに表示されます</p></div>
+</div>
+</main>
+<footer><img src="${creatorLogo}" alt="制作者ロゴ"></footer>
+<script>
+(function(){
+  const container=document.getElementById('cards');
+  const candidate=document.getElementById('candidate');
+  let selectedCards=[];
+  function updateCandidateDisplay(){
+    candidate.innerHTML='<h3>怪異候補</h3>';
+    if(selectedCards.length===0){ candidate.innerHTML+='<p>選択したカードがここに表示されます</p>'; return; }
+    selectedCards.forEach(card=>{
+      const imgSrc=card.querySelector('img').src;
+      const name=card.dataset.name||'';
+      const div=document.createElement('div');
+      div.innerHTML=\`<img src="\${imgSrc}" alt="\${name}"><div style="font-weight:600;margin-top:6px;">\${name}</div>\`;
+      candidate.appendChild(div);
+      const imgElem=div.querySelector('img');
+      setTimeout(()=>{ imgElem.classList.add('fade-in'); },20);
+    });
+  }
+  container.addEventListener('click',(ev)=>{
+    const card=ev.target.closest('.card');
+    if(!card) return;
+    const idx=selectedCards.indexOf(card);
+    if(idx===-1){ selectedCards.push(card); card.classList.add('selected'); }
+    else{ selectedCards.splice(idx,1); card.classList.remove('selected'); }
+    updateCandidateDisplay();
+  });
+})();
+</script>
+</body>
+</html>`;
+
+    document.getElementById('generatedHTML').value=finalHTML;
+  };
+})();
+</script>
+</body>
+</html>
